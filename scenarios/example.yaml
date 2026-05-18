@@ -1,0 +1,95 @@
+# Example scenario — exercises the public TodoMVC demo.
+# Run: node bin/ui-replay.mjs run scenarios/example.yaml
+#
+# This file demonstrates every step verb the engine supports. Use it as a
+# copy-and-trim starting point when writing scenarios for your own app.
+
+name: example-todomvc
+base_url: https://demo.playwright.dev
+viewport: { width: 1280, height: 800 }
+slow_mo_ms: 200
+console_guard:
+  ignore:
+    - "favicon\\.ico"
+    - "DevTools"
+
+sections:
+  - id: smoke
+    title: §1 Smoke
+    goal: TodoMVC page loads and renders the input box.
+    scenario:
+      - "GET /todomvc → wait for <h1>todos</h1>"
+      - "verify title contains 'TodoMVC'"
+    expected:
+      - "h1 says 'todos'"
+      - "no console errors"
+    steps:
+      - banner:
+          tag: SECTION 1
+          title: Smoke
+          subtitle: page loads, input ready
+      - goto: /todomvc
+      - wait_for:
+          selector: ".new-todo"
+          timeout: 5000
+      - assert_visible: "h1"
+      - assert_title_contains: "TodoMVC"
+      - screenshot:
+          label: page-loaded
+          observation: input visible, header rendered
+
+  - id: add-todo
+    title: §2 Add a todo
+    goal: Type in the input + press Enter; the list should grow by 1.
+    scenario:
+      - "GET /todomvc"
+      - "fill .new-todo with 'buy milk' → press Enter"
+      - "assert one .todo-list li"
+    expected:
+      - "exactly 1 todo item in the list"
+      - "counter says '1 item left'"
+    steps:
+      - banner: { tag: SECTION 2, title: Add a todo }
+      - goto: /todomvc
+      - wait_for: { selector: ".new-todo" }
+      - fill:
+          selector: ".new-todo"
+          value: "buy milk"
+      - press:
+          selector: ".new-todo"
+          key: "Enter"
+      - wait_for: { selector: ".todo-list li", timeout: 3000 }
+      - screenshot: { label: after-add, observation: one item appears }
+      - assert_selector_count:
+          selector: ".todo-list li"
+          equals: 1
+      - assert_text:
+          selector: ".todo-count"
+          contains: "1"
+
+  - id: complete-todo
+    title: §3 Complete a todo
+    goal: Tick the checkbox; the row should pick up the .completed class.
+    scenario:
+      - "Add a todo (as in §2)"
+      - "click the row checkbox"
+      - "assert li gains .completed class"
+    expected:
+      - ".todo-list li.completed exists"
+      - "counter says '0 items left'"
+    steps:
+      - banner: { tag: SECTION 3, title: Complete a todo }
+      - goto: /todomvc
+      - wait_for: { selector: ".new-todo" }
+      - fill: { selector: ".new-todo", value: "write test plan" }
+      - press: { selector: ".new-todo", key: "Enter" }
+      - wait_for: { selector: ".todo-list li" }
+      - click:
+          selector: ".todo-list li .toggle"
+          label: tick first todo
+      - wait_ms: 400
+      - screenshot: { label: after-complete }
+      - assert_selector_count:
+          selector: ".todo-list li.completed"
+          equals: 1
+      - eval: "() => document.querySelector('.todo-count')?.textContent || ''"
