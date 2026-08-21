@@ -21,7 +21,7 @@
     "example": "node bin/ui-replay.mjs run scenarios/example.yaml"
   },
   "dependencies": {
-    "playwright": "^1.60.0",
+    "playwright": "^1.62.1",
     "yaml": "^2.5.0"
   },
   "engines": {
